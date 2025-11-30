@@ -383,6 +383,69 @@ local function CreateClicker(Button)
     NewClicker.Parent = Button
 end
 
+local CurrentTheme = "Neon"
+local Themes = {
+    Neon = {
+        primary = Color3.fromRGB(0, 255, 255),
+        accent = Color3.fromRGB(0, 255, 255),
+        bg = Color3.fromRGB(30, 30, 30),
+        text = Color3.fromRGB(0, 0, 0),
+        inputBg = Color3.fromRGB(0, 140, 140),
+        strokeT = 0.25,
+        bgT = 0.6
+    },
+    MinimalDark = {
+        primary = Color3.fromRGB(55, 55, 55),
+        accent = Color3.fromRGB(180, 180, 180),
+        bg = Color3.fromRGB(20, 20, 20),
+        text = Color3.fromRGB(230, 230, 230),
+        inputBg = Color3.fromRGB(35, 35, 35),
+        strokeT = 0.35,
+        bgT = 0.7
+    },
+    Glass = {
+        primary = Color3.fromRGB(255, 255, 255),
+        accent = Color3.fromRGB(120, 180, 255),
+        bg = Color3.fromRGB(255, 255, 255),
+        text = Color3.fromRGB(25, 25, 25),
+        inputBg = Color3.fromRGB(255, 255, 255),
+        strokeT = 0.15,
+        bgT = 0.85
+    },
+    Vaporwave = {
+        primary = Color3.fromRGB(255, 105, 180),
+        accent = Color3.fromRGB(100, 210, 255),
+        bg = Color3.fromRGB(30, 20, 40),
+        text = Color3.fromRGB(0, 0, 0),
+        inputBg = Color3.fromRGB(110, 60, 130),
+        strokeT = 0.25,
+        bgT = 0.6
+    },
+    Terminal = {
+        primary = Color3.fromRGB(0, 0, 0),
+        accent = Color3.fromRGB(0, 255, 0),
+        bg = Color3.fromRGB(10, 10, 10),
+        text = Color3.fromRGB(0, 255, 0),
+        inputBg = Color3.fromRGB(0, 0, 0),
+        strokeT = 0.2,
+        bgT = 0.6
+    }
+}
+
+local THEME_PRIMARY, THEME_ACCENT, THEME_BG, THEME_TEXT, THEME_INPUT_BG, THEME_STROKE_T, THEME_BG_T
+
+local function SetTheme(name)
+    local t = Themes[name] or Themes.Neon
+    CurrentTheme = name
+    THEME_PRIMARY = t.primary
+    THEME_ACCENT = t.accent
+    THEME_BG = t.bg
+    THEME_TEXT = t.text
+    THEME_INPUT_BG = t.inputBg
+    THEME_STROKE_T = t.strokeT
+    THEME_BG_T = t.bgT
+end
+
 local function StyleButton(btn)
     pcall(function()
         btn.AutoButtonColor = false
@@ -391,9 +454,11 @@ local function StyleButton(btn)
         corner.Parent = btn
         local stroke = Instance.new("UIStroke")
         stroke.Thickness = 1
-        stroke.Color = Color3.fromRGB(0, 255, 255)
-        stroke.Transparency = 0.25
+        stroke.Color = THEME_ACCENT or Color3.fromRGB(0, 255, 255)
+        stroke.Transparency = THEME_STROKE_T or 0.25
         stroke.Parent = btn
+        btn.BackgroundColor3 = THEME_PRIMARY or btn.BackgroundColor3
+        btn.TextColor3 = THEME_TEXT or btn.TextColor3
         btn.MouseEnter:Connect(function()
             TweenService:Create(btn, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {BackgroundTransparency = 0.3}):Play()
         end)
@@ -410,9 +475,11 @@ local function StyleInput(tb)
         corner.Parent = tb
         local stroke = Instance.new("UIStroke")
         stroke.Thickness = 1
-        stroke.Color = Color3.fromRGB(0, 255, 255)
-        stroke.Transparency = 0.25
+        stroke.Color = THEME_ACCENT or Color3.fromRGB(0, 255, 255)
+        stroke.Transparency = THEME_STROKE_T or 0.25
         stroke.Parent = tb
+        tb.BackgroundColor3 = THEME_INPUT_BG or tb.BackgroundColor3
+        tb.TextColor3 = THEME_TEXT or tb.TextColor3
     end)
 end
 
@@ -427,15 +494,19 @@ local function ApplyGlobalStyle()
             bgCorner.Parent = bg
             local bgStroke = Instance.new("UIStroke")
             bgStroke.Thickness = 1
-            bgStroke.Color = Color3.fromRGB(0, 255, 255)
-            bgStroke.Transparency = 0.4
+            bgStroke.Color = THEME_ACCENT or Color3.fromRGB(0, 255, 255)
+            bgStroke.Transparency = THEME_STROKE_T or 0.4
             bgStroke.Parent = bg
+            bg.BackgroundColor3 = THEME_BG or bg.BackgroundColor3
+            bg.ImageColor3 = THEME_ACCENT or bg.ImageColor3
         end
         for _, d in pairs(rootGui:GetDescendants()) do
             if d:IsA("TextButton") then
                 StyleButton(d)
             elseif d:IsA("TextBox") then
                 StyleInput(d)
+            elseif d:IsA("TextLabel") then
+                d.TextColor3 = THEME_ACCENT or d.TextColor3
             end
         end
     end)
@@ -2183,7 +2254,7 @@ CreateClicker(InfYield_Button)
 CreateClicker(Serverhop_Button)
 
 task.wait(0.5)
-
+SetTheme("Neon")
 ApplyGlobalStyle()
 
 local function ChangeSection(SectionClicked)
