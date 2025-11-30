@@ -2259,8 +2259,9 @@ ApplyGlobalStyle()
 
 local USE_ORION = true
 if USE_ORION then
-    local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
-    local Window = OrionLib:MakeWindow({Name = "System Broken", HidePremium = false, SaveConfig = false})
+    local ok, err = pcall(function()
+        local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+        local Window = OrionLib:MakeWindow({Name = "System Broken", HidePremium = false, SaveConfig = false})
 
     local HomeTab = Window:MakeTab({Name = "Home", Icon = "rbxassetid://12298407748", PremiumOnly = false})
     HomeTab:AddParagraph("Bem-vindo", "Olá @"..plr.Name)
@@ -2475,8 +2476,16 @@ if USE_ORION then
     local CreditsTab = Window:MakeTab({Name = "Credits", Icon = "rbxassetid://12298407748", PremiumOnly = false})
     CreditsTab:AddParagraph("Créditos", "Made by: MalwareHUB\nDiscord: system_calix\nVersion: "..version)
 
-    OrionLib:Init()
-    SysBroker.Enabled = false
+        OrionLib:Init()
+        if SysBroker and SysBroker.Parent then
+            SysBroker:Destroy()
+        end
+    end)
+    if ok then
+        return
+    else
+        SendNotify("System Broken","Falha ao carregar Orion UI. Mantendo UI atual.",5)
+    end
 end
 
 local function ChangeSection(SectionClicked)
