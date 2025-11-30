@@ -783,8 +783,9 @@ end
 local function StyleButton(btn)
     pcall(function()
         btn.AutoButtonColor = false
+        btn.Font = Enum.Font.GothamBold
         local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 6)
+        corner.CornerRadius = UDim.new(0, 8)
         corner.Parent = btn
         local stroke = Instance.new("UIStroke")
         stroke.Thickness = 1
@@ -793,17 +794,32 @@ local function StyleButton(btn)
         stroke.Parent = btn
         btn.BackgroundColor3 = THEME_PRIMARY or btn.BackgroundColor3
         btn.TextColor3 = THEME_TEXT or btn.TextColor3
+        local scale = Instance.new("UIScale")
+        scale.Scale = 1
+        scale.Parent = btn
         btn.MouseEnter:Connect(function()
             TweenService:Create(btn, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {BackgroundTransparency = 0.3}):Play()
+            TweenService:Create(scale, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Scale = 1.05}):Play()
         end)
         btn.MouseLeave:Connect(function()
             TweenService:Create(btn, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5}):Play()
+            TweenService:Create(scale, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Scale = 1}):Play()
+        end)
+        btn.MouseButton1Click:Connect(function()
+            TweenService:Create(scale, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Scale = 0.97}):Play()
+            task.delay(0.1, function()
+                TweenService:Create(scale, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Scale = 1.05}):Play()
+                task.delay(0.08, function()
+                    TweenService:Create(scale, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Scale = 1}):Play()
+                end)
+            end)
         end)
     end)
 end
 
 local function StyleInput(tb)
     pcall(function()
+        tb.Font = Enum.Font.Gotham
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(0, 6)
         corner.Parent = tb
@@ -833,6 +849,30 @@ local function ApplyGlobalStyle()
             bgStroke.Parent = bg
             bg.BackgroundColor3 = THEME_BG or bg.BackgroundColor3
             bg.ImageColor3 = THEME_ACCENT or bg.ImageColor3
+            local shadow = Instance.new("Frame")
+            shadow.Name = "Shadow"
+            shadow.Size = UDim2.new(1, 12, 1, 12)
+            shadow.Position = UDim2.new(0, -6, 0, -4)
+            shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            shadow.BackgroundTransparency = 0.85
+            shadow.ZIndex = (bg.ZIndex or 9) - 1
+            shadow.Parent = bg
+            local shadowCorner = Instance.new("UICorner")
+            shadowCorner.CornerRadius = UDim.new(0, 12)
+            shadowCorner.Parent = shadow
+            local bgGradient = Instance.new("UIGradient")
+            bgGradient.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(25, 25, 25)),
+                ColorSequenceKeypoint.new(1.00, THEME_ACCENT or Color3.fromRGB(0, 235, 235))
+            }
+            bgGradient.Rotation = 0
+            bgGradient.Parent = bg
+            task.spawn(function()
+                while bg.Parent do
+                    bgGradient.Rotation = (bgGradient.Rotation + 0.2) % 360
+                    RunService.RenderStepped:Wait()
+                end
+            end)
         end
         for _, d in pairs(rootGui:GetDescendants()) do
             if d:IsA("TextButton") then
@@ -874,8 +914,8 @@ TitleBarLabel.BackgroundTransparency = 0.250
 TitleBarLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
 TitleBarLabel.BorderSizePixel = 0
 TitleBarLabel.Size = UDim2.new(1, 0, 0, 30)
-TitleBarLabel.Font = Enum.Font.Unknown
-TitleBarLabel.Text = "____/SYSTEMBROKEN\\___"
+TitleBarLabel.Font = Enum.Font.GothamBold
+TitleBarLabel.Text = "System Broken"
 TitleBarLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
 TitleBarLabel.TextScaled = true
 TitleBarLabel.TextSize = 14.000
@@ -4224,9 +4264,10 @@ OpenClose.MouseButton1Click:Connect(function()
     if not Background.Visible then
         Background.Visible = true
         Background.Position = UDim2.new(0.5, 0, 1.2, 0)
-        TweenService:Create(Background, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+        Background.ImageTransparency = 0.85
+        TweenService:Create(Background, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.5, 0), ImageTransparency = 0.6}):Play()
     else
-        TweenService:Create(Background, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(0.5, 0, 1.2, 0)}):Play()
+        TweenService:Create(Background, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(0.5, 0, 1.2, 0), ImageTransparency = 0.85}):Play()
         task.delay(0.25, function()
             Background.Visible = false
         end)
@@ -4239,9 +4280,10 @@ game:GetService("UserInputService").InputBegan:Connect(function(input, gameProce
         if not Background.Visible then
             Background.Visible = true
             Background.Position = UDim2.new(0.5, 0, 1.2, 0)
-            TweenService:Create(Background, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+            Background.ImageTransparency = 0.85
+            TweenService:Create(Background, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.5, 0), ImageTransparency = 0.6}):Play()
         else
-            TweenService:Create(Background, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(0.5, 0, 1.2, 0)}):Play()
+            TweenService:Create(Background, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(0.5, 0, 1.2, 0), ImageTransparency = 0.85}):Play()
             task.delay(0.25, function()
                 Background.Visible = false
             end)
