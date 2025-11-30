@@ -252,6 +252,340 @@ end
 
 --LOAD GUI
 task.wait(0.1)
+local USE_ORION = true
+if USE_ORION then
+    local ok, err = pcall(function()
+        local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+        local Window = OrionLib:MakeWindow({Name = 'System Broken', HidePremium = false, SaveConfig = false})
+
+        local HomeTab = Window:MakeTab({Name = 'Home', Icon = 'rbxassetid://12298407748', PremiumOnly = false})
+        HomeTab:AddParagraph('Bem-vindo', 'Olá @'..plr.Name)
+
+        local GameTab = Window:MakeTab({Name = 'Game', Icon = 'rbxassetid://12298407748', PremiumOnly = false})
+        local AntiRagdollConn = nil
+        GameTab:AddToggle({Name = 'Anti ragdoll', Default = false, Callback = function(v)
+            if v then
+                ToggleRagdoll(true)
+                AntiRagdollConn = GetRoot(plr).ChildAdded:Connect(function(Force)
+                    if Force.Name == 'PushForce' then
+                        Force.MaxForce = Vector3.new(0,0,0)
+                        Force.Velocity = Vector3.new(0,0,0)
+                    end
+                end)
+            else
+                ToggleRagdoll(false)
+                if AntiRagdollConn then AntiRagdollConn:Disconnect() end
+            end
+        end})
+
+        local PushAuraEnabled = false
+        GameTab:AddToggle({Name = 'Push aura', Default = false, Callback = function(v)
+            PushAuraEnabled = v
+            if v then
+                task.spawn(function()
+                    while PushAuraEnabled do
+                        task.wait(0.3)
+                        pcall(function()
+                            for _,p in pairs(Players:GetPlayers()) do
+                                if (p ~= plr) and (not table.find(ScriptWhitelist,p.UserId)) and (not table.find(ForceWhitelist,p.UserId)) then
+                                    Push(p)
+                                end
+                            end
+                        end)
+                    end
+                end)
+            end
+        end})
+
+        local SpamMinesEnabled = false
+        local AntiMinesConn = nil
+        GameTab:AddToggle({Name = 'Spam mines', Default = false, Callback = function(v)
+            SpamMinesEnabled = v
+            if v then
+                AntiMinesConn = plr.Character.Head.ChildAdded:Connect(function(Force)
+                    if Force.Name == 'BodyVelocity' then
+                        Force.MaxForce = Vector3.new(0,0,0)
+                        Force.Velocity = Vector3.new(0,0,0)
+                    end
+                end)
+                task.spawn(function()
+                    while SpamMinesEnabled do
+                        task.wait(1)
+                        for _,m in pairs(MinesFolder:GetChildren()) do
+                            if m.Name == 'Landmine' and m:FindFirstChild('HitPart') then
+                                pcall(function()
+                                    Touch(m.HitPart.TouchInterest,GetRoot(plr))
+                                end)
+                            end
+                        end
+                    end
+                end)
+            else
+                if AntiMinesConn then AntiMinesConn:Disconnect() end
+            end
+        end})
+
+        local PotionFlingEnabled = false
+        GameTab:AddToggle({Name = 'Potion fling', Default = false, Callback = function(v)
+            PotionFlingEnabled = v
+            if v then
+                if CheckPotion() then
+                    PotionTool.Parent = plr.Character
+                    local okp = pcall(function()
+                        PotionTool.InSide.Massless = true
+                        PotionTool.Cap.Massless = true
+                        PotionTool.Handle.Massless = true
+                        PotionTool.GripUp = Vector3.new(0,1,0)
+                        PotionTool.GripPos = Vector3.new(5000,-25,5000)
+                        PotionTool.Parent = plr.Backpack
+                        PotionTool.Parent = plr.Character
+                    end)
+                    if not okp then PotionFlingEnabled = false end
+                else
+                    PotionFlingEnabled = false
+                end
+            else
+                if PotionTool then
+                    PotionTool.Parent = plr.Character
+                    pcall(function()
+                        PotionTool.InSide.Massless = false
+                        PotionTool.Cap.Massless = false
+                        PotionTool.Handle.Massless = false
+                        PotionTool.GripUp = Vector3.new(0,1,0)
+                        PotionTool.GripPos = Vector3.new(0.1,-0.5,0)
+                        PotionTool.Parent = plr.Backpack
+                        PotionTool.Parent = plr.Character
+                    end)
+                end
+            end
+        end})
+
+        GameTab:AddToggle({Name = 'Void protection', Default = false, Callback = function(v)
+            ToggleVoidProtection(v)
+        end})
+
+        GameTab:AddButton({Name = 'Break Cannons', Callback = function()
+            ToggleVoidProtection(true)
+            TeleportTO(0,-10000,0,'pos')
+            task.wait(GetPing()+0.1)
+            ToggleVoidProtection(false)
+            task.wait(GetPing()+0.1)
+            for _,v in pairs(CannonsFolders[1]:GetChildren()) do
+                if v.Name == 'Cannon' then pcall(function() fireclickdetector(v.Cannon_Part.ClickDetector) end) end
+            end
+            for _,v in pairs(CannonsFolders[2]:GetChildren()) do
+                if v.Name == 'Cannon' then pcall(function() fireclickdetector(v.Cannon_Part.ClickDetector) end) end
+            end
+        end})
+
+        GameTab:AddButton({Name = 'Push All', Callback = function()
+            local oldpos = GetRoot(plr).Position
+            for _,p in pairs(Players:GetPlayers()) do
+                pcall(function()
+                    if (p ~= plr) and (not table.find(ScriptWhitelist,p.UserId)) and (not table.find(ForceWhitelist,p.UserId)) then
+                        PredictionTP(p)
+                        task.wait(GetPing()+0.05)
+                        Push(p)
+                    end
+                end)
+            end
+            TeleportTO(oldpos.X,oldpos.Y,oldpos.Z,'pos','safe')
+        end})
+
+        local TeleTab = Window:MakeTab({Name = 'Teleports', Icon = 'rbxassetid://3926305904', PremiumOnly = false})
+        local function tp(x,y,z) TeleportTO(x,y,z,'pos','safe') end
+        TeleTab:AddButton({Name='Cannons 1',Callback=function() tp(-61,34,-228) end})
+        TeleTab:AddButton({Name='Cannons 2',Callback=function() tp(50,34,-228) end})
+        TeleTab:AddButton({Name='Cannons 3',Callback=function() tp(-6,35,-106) end})
+        TeleTab:AddButton({Name='Minefield',Callback=function() tp(-65,23,-151) end})
+        TeleTab:AddButton({Name='Ballon',Callback=function() tp(-118,23,-126) end})
+        TeleTab:AddButton({Name='Normal Stairs',Callback=function() tp(-6,203,-496) end})
+        TeleTab:AddButton({Name='Moving Stairs',Callback=function() tp(-210,87,-224) end})
+        TeleTab:AddButton({Name='Spiral Stairs',Callback=function() tp(151,847,-306) end})
+        TeleTab:AddButton({Name='Skyscraper',Callback=function() tp(142,1033,-192) end})
+        TeleTab:AddButton({Name='Pool',Callback=function() tp(-133,65,-321) end})
+
+        local CharacterTab = Window:MakeTab({Name = 'Character', Icon = 'rbxassetid://3926305904', PremiumOnly = false})
+        CharacterTab:AddSlider({Name='Walk Speed',Min=1,Max=200,Default=16,Increment=1,ValueName='u/s',Callback=function(val)
+            pcall(function() plr.Character.Humanoid.WalkSpeed = val end)
+        end})
+        CharacterTab:AddSlider({Name='Jump Power',Min=1,Max=200,Default=50,Increment=1,ValueName='power',Callback=function(val)
+            pcall(function() plr.Character.Humanoid.JumpPower = val end)
+        end})
+        CharacterTab:AddButton({Name='Salvar checkpoint',Callback=function()
+            SavedCheckpoint = GetRoot(plr).Position
+            SendNotify('System Broken','Checkpoint saved.',5)
+        end})
+        CharacterTab:AddButton({Name='Limpar checkpoint',Callback=function()
+            SavedCheckpoint = nil
+            SendNotify('System Broken','Checkpoint cleared.',5)
+        end})
+        CharacterTab:AddButton({Name='Respawn',Callback=function()
+            plr.Character:BreakJoints()
+        end})
+
+        local TargetTab = Window:MakeTab({Name = 'Target', Icon = 'rbxassetid://3926305904', PremiumOnly = false})
+        TargetTab:AddTextbox({Name='Selecionar alvo',Default='',TextDisappear=false,Callback=function(txt)
+            local t = GetPlayer(txt:lower())
+            UpdateTarget(t)
+        end})
+        local ViewTargetEnabled = false
+        TargetTab:AddToggle({Name='View target',Default=false,Callback=function(v)
+            ViewTargetEnabled = v
+            if v and TargetedPlayer ~= nil then
+                task.spawn(function()
+                    while ViewTargetEnabled and TargetedPlayer ~= nil do
+                        pcall(function()
+                            game.Workspace.CurrentCamera.CameraSubject = Players[TargetedPlayer].Character.Humanoid
+                        end)
+                        task.wait(0.5)
+                    end
+                    game.Workspace.CurrentCamera.CameraSubject = plr.Character.Humanoid
+                end)
+            else
+                game.Workspace.CurrentCamera.CameraSubject = plr.Character.Humanoid
+            end
+        end})
+        local FlingTargetEnabled = false
+        TargetTab:AddToggle({Name='Fling target',Default=false,Callback=function(v)
+            FlingTargetEnabled = v
+            if v and TargetedPlayer ~= nil then
+                local OldPos = GetRoot(plr).Position
+                ToggleFling(true)
+                task.spawn(function()
+                    repeat task.wait()
+                        pcall(function()
+                            PredictionTP(Players[TargetedPlayer],'safe')
+                        end)
+                    until not FlingTargetEnabled
+                    TeleportTO(OldPos.X,OldPos.Y,OldPos.Z,'pos','safe')
+                    ToggleFling(false)
+                end)
+            else
+                ToggleFling(false)
+            end
+        end})
+
+        TargetTab:AddButton({Name='Push target',Callback=function()
+            if TargetedPlayer then Push(Players[TargetedPlayer]) end
+        end})
+        TargetTab:AddButton({Name='Teleport to target',Callback=function()
+            if TargetedPlayer then PredictionTP(Players[TargetedPlayer],'safe') end
+        end})
+
+        local MiscTab = Window:MakeTab({Name = 'Misc', Icon = 'rbxassetid://3926305904', PremiumOnly = false})
+        local AntiFlingEnabled = false
+        MiscTab:AddToggle({Name='Anti fling',Default=false,Callback=function(v)
+            AntiFlingEnabled = v
+            _G.AntiFlingToggled = v
+            if v then loadstring(game:HttpGet('https://raw.githubusercontent.com/H20CalibreYT/SystemBroken/main/AntiFling'))() end
+        end})
+        local AntiChatSpyEnabled = false
+        MiscTab:AddToggle({Name='Anti chat spy',Default=false,Callback=function(v)
+            AntiChatSpyEnabled = v
+            if v then
+                task.spawn(function()
+                    repeat task.wait() Players:Chat(RandomChar()) until not AntiChatSpyEnabled
+                end)
+            end
+        end})
+        local AntiAFKConn = nil
+        MiscTab:AddToggle({Name='Anti AFK',Default=false,Callback=function(v)
+            if v then
+                AntiAFKConn = plr.Idled:Connect(function()
+                    local VirtualUser = game:GetService('VirtualUser')
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton2(Vector2.new())
+                end)
+            else
+                if AntiAFKConn then AntiAFKConn:Disconnect() end
+            end
+        end})
+
+        local ShadersEnabled = false
+        MiscTab:AddToggle({Name='Shaders',Default=false,Callback=function(v)
+            ShadersEnabled = v
+            if v then
+                local Sky = Instance.new('Sky')
+                local Bloom = Instance.new('BloomEffect')
+                local Blur = Instance.new('BlurEffect')
+                local ColorC = Instance.new('ColorCorrectionEffect')
+                local SunRays = Instance.new('SunRaysEffect')
+                Light.Brightness = 2.25
+                Light.ExposureCompensation = 0.1
+                Light.ClockTime = 17.55
+                Sky.SkyboxBk = 'http://www.roblox.com/asset/?id=144933338'
+                Sky.SkyboxDn = 'http://www.roblox.com/asset/?id=144931530'
+                Sky.SkyboxFt = 'http://www.roblox.com/asset/?id=144933262'
+                Sky.SkyboxLf = 'http://www.roblox.com/asset/?id=144933244'
+                Sky.SkyboxRt = 'http://www.roblox.com/asset/?id=144933299'
+                Sky.SkyboxUp = 'http://www.roblox.com/asset/?id=144931564'
+                Sky.StarCount = 5000
+                Sky.SunAngularSize = 5
+                Sky.Parent = Light
+                Bloom.Intensity = 0.3
+                Bloom.Size = 10
+                Bloom.Threshold = 0.8
+                Bloom.Parent = Light
+                Blur.Size = 5
+                Blur.Parent = Light
+                ColorC.Brightness = 0
+                ColorC.Contrast = 0.1
+                ColorC.Saturation = 0.25
+                ColorC.TintColor = Color3.fromRGB(255,255,255)
+                ColorC.Parent = Light
+                SunRays.Intensity = 0.1
+                SunRays.Spread = 0.8
+                SunRays.Parent = Light
+            else
+                for _,v in pairs(Light:GetChildren()) do v:Destroy() end
+                Light.Brightness = 2
+                Light.ExposureCompensation = 0
+            end
+        end})
+        MiscTab:AddButton({Name='Day',Callback=function() if not ShadersEnabled then Light.ClockTime = 14 end end})
+        MiscTab:AddButton({Name='Night',Callback=function() if not ShadersEnabled then Light.ClockTime = 19 end end})
+        MiscTab:AddButton({Name='Explode',Callback=function()
+            ToggleRagdoll(false)
+            task.wait()
+            plr.Character.Humanoid:ChangeState(0)
+            local bav = Instance.new('BodyAngularVelocity')
+            bav.Parent = GetRoot(plr)
+            bav.Name = 'Spin'
+            bav.MaxTorque = Vector3.new(0,math.huge,0)
+            bav.AngularVelocity = Vector3.new(0,150,0)
+            task.wait(3)
+            plr.Character.Humanoid:ChangeState(15)
+        end})
+        MiscTab:AddButton({Name='Infinite Yield',Callback=function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end})
+        MiscTab:AddButton({Name='CMD-X',Callback=function() loadstring(game:HttpGet('https://raw.githubusercontent.com/CMD-X/CMD-X/master/Source',true))() end})
+        MiscTab:AddButton({Name='Rejoin',Callback=function() game:GetService('TeleportService'):TeleportToPlaceInstance(game.PlaceId, game.JobId, plr) end})
+        MiscTab:AddButton({Name='Server hop',Callback=function()
+            if httprequest then
+                local servers = {}
+                local req = httprequest({Url = string.format('https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100', game.PlaceId)})
+                local body = HttpService:JSONDecode(req.Body)
+                if body and body.data then
+                    for _, v in next, body.data do
+                        if type(v) == 'table' and tonumber(v.playing) and tonumber(v.maxPlayers) and v.playing < v.maxPlayers and v.id ~= game.JobId then
+                            table.insert(servers, 1, v.id)
+                        end
+                    end
+                end
+                if #servers > 0 then
+                    game:GetService('TeleportService'):TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], plr)
+                end
+            end
+        end})
+
+        local CreditsTab = Window:MakeTab({Name = 'Credits', Icon = 'rbxassetid://12298407748', PremiumOnly = false})
+        CreditsTab:AddParagraph('Créditos', 'Made by: MalwareHUB\nDiscord: system_calix\nVersion: '..version)
+
+        OrionLib:Init()
+    end)
+    if ok then return end
+    SendNotify('System Broken','Falha ao carregar Orion UI: '..tostring(err),5)
+end
 local SysBroker = Instance.new("ScreenGui")
 local Background = Instance.new("ImageLabel")
 local TitleBarLabel = Instance.new("TextLabel")
